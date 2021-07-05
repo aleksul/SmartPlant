@@ -26,7 +26,7 @@ You can edit any part of this project with open source software such as
 
 ## Want to build the same on your own?
 
-Follow the [wiki](https://gitlab.com/aleksul/smart-plant/-/wikis/home) for Gerber files, bill of materials and more.
+Follow the [wiki](https://github.com/Aleksul/SmartPlant/wiki) for Gerber files, bill of materials and more.
 
 ## Struggling?
 
