@@ -58,6 +58,7 @@ void setup()
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(3, 11);
   display.setTextSize(2);
   display.println("SmartPlant");
