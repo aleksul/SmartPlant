@@ -8,7 +8,7 @@ RTC_DS1307 RTC;
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
 
-Adafruit_SSD1306 display(128, 32, &Wire, 4);
+Adafruit_SSD1306 display(128, 32, &Wire);
 
 #define SOIL_SENSOR A0
 #define WATER_LEVEL_SENSOR A1
@@ -26,6 +26,8 @@ uint16_t minimum_water_amount = 0;
 uint16_t maximum_soil_moistry_level = 512;
 
 DateTime future;
+
+String message = "";
 
 void setup()
 {
@@ -45,8 +47,8 @@ void setup()
   }
 
   DateTime now = RTC.now();
-  future = DateTime(now.get() + WATER_EVERY_N_SECONDS);
-  
+  future = DateTime(now.unixtime() + WATER_EVERY_N_SECONDS);
+
   EEPROM.get(0, minimum_water_amount);
   EEPROM.get(2, maximum_soil_moistry_level);
 
@@ -55,7 +57,8 @@ void setup()
   display.setTextSize(1, 2);
   display.setTextColor(SSD1306_WHITE);
 
-  display.setCursor(10, 10);
+  display.setCursor(3, 11);
+  display.setTextSize(2);
   display.println("SmartPlant");
   display.display();
   delay(3000);
@@ -66,8 +69,13 @@ void loop()
 {
   checkButtons();
   DateTime now = RTC.now();
-  if (now.get() >= future && analogRead(SOIL_SENSOR) < maximum_soil_moistry_level) {
-    future = DateTime(now.get() + WATER_EVERY_N_SECONDS);
+  String old_message = message;
+  updateMessage(now, analogRead(THERMISTOR), analogRead(WATER_LEVEL_SENSOR), analogRead(SOIL_SENSOR));
+  if (old_message != message) {
+    updateDisplay(); 
+  }
+  if (now.unixtime() >= future.unixtime() && analogRead(SOIL_SENSOR) < maximum_soil_moistry_level) {
+    future = DateTime(now.unixtime() + WATER_EVERY_N_SECONDS);
     digitalWrite(PUMP, HIGH);
     delay(PUMP_SEC);
     digitalWrite(PUMP, LOW);
@@ -75,15 +83,34 @@ void loop()
   delay(10);
 }
 
-void updateDisplay(int temperature, int water_level, int soil_moisture) {
-    
+void updateMessage(DateTime now, uint16_t temperature, uint16_t water_level, uint16_t soil) {
+  message = String(now.day()) + "." + String(now.month()) + "." + String(now.year()) + " ";
+  message += String(now.hour()) + ":" + String(now.minute()) + "\n";
+  if (water_level <= minimum_water_amount) {
+    message += "Water level is low\n";
+  }
+  if (soil < maximum_soil_moistry_level) {
+    message += "Next watering\n";
+    message += "on " + String(future.day()) + "." + String(future.month()) + "." + String(future.year()) + " ";
+    message += String(future.hour()) + ":" + String(future.minute());
+  } else {
+    message += "Soil is moist enough";  
+  }
+}
+
+void updateDisplay() {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println(message);
+  display.display();
 }
 
 void checkButtons() {
   if (digitalRead(BUTTON1) == HIGH) {
     delay(10);
     if (digitalRead(BUTTON1) == HIGH) {
-      EEPROM.put(0, analogRead(WATER_LEVEL_SENSOR);
+      EEPROM.put(0, analogRead(WATER_LEVEL_SENSOR));
       digitalWrite(LED, HIGH);
       delay(1000);
       digitalWrite(LED, LOW);
@@ -92,7 +119,7 @@ void checkButtons() {
   if (digitalRead(BUTTON2) == HIGH) {
     delay(10);
     if (digitalRead(BUTTON2) == HIGH) {
-      EEPROM.put(2, analogRead(SOIL_SENSOR);
+      EEPROM.put(2, analogRead(SOIL_SENSOR));
       digitalWrite(LED, HIGH);
       delay(1000);
       digitalWrite(LED, LOW);
