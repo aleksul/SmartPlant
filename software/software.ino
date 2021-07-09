@@ -40,7 +40,11 @@ void setup()
   pinMode(PUMP, OUTPUT);
 
   Wire.begin();
-  RTC.begin();
+  if (!RTC.begin()) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+    abort(); 
+  }
 
   if (!RTC.isrunning()) {
     RTC.adjust(DateTime(__DATE__, __TIME__));
@@ -54,9 +58,6 @@ void setup()
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
-  display.setTextSize(1, 2);
-  display.setTextColor(SSD1306_WHITE);
-
   display.setCursor(3, 11);
   display.setTextSize(2);
   display.println("SmartPlant");
